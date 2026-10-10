@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valorix360 · Asesoría financiera, contable y estratégica</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#">VALORIX <span>360</span></a>
+    <nav>
+      <a href="#analizamos">Qué analizamos</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#recibes">Qué recibes</a>
+      <a class="btn btn-lime" href="http://localhost:8501" target="_blank" rel="noopener">Solicita diagnóstico</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Asesoría financiera, contable y estratégica</div>
+      <h1>Convierte tus estados financieros en decisiones de caja y utilidad.</h1>
+      <p>Valorix360 revisa tu liquidez, flujo de caja, utilidades e inventarios, y te entrega un plan claro para mejorar tus resultados y proyecciones.</p>
+      <div class="cta">
+        <a class="btn btn-lime" href="http://localhost:8501" target="_blank" rel="noopener">Solicita diagnóstico</a>
+        <a class="btn btn-ghost" href="#funciona">Ver cómo funciona</a>
+      </div>
+      <small>Tu información financiera se trata de forma confidencial.</small>
+    </div>
+    <div class="card-dark">
+      <h4>Diagnóstico financiero</h4>
+      <div class="row">Liquidez <span class="badge warn">Revisar</span></div>
+      <div class="row">Flujo de caja <span class="badge bad">Atención</span></div>
+      <div class="row">Utilidades <span class="badge ok">Bien</span></div>
+      <div class="row">Inventarios <span class="badge warn">Revisar</span></div>
+      <div class="row">Endeudamiento <span class="badge ok">Bien</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="light" id="analizamos">
+  <div class="wrap">
+    <div class="eyebrow">Qué analizamos</div>
+    <h2>Las cuatro palancas que mueven tu caja</h2>
+    <div class="cards">
+      <div class="card"><div class="ic">$</div><h3>Liquidez</h3><p>Si tu empresa puede cubrir sus obligaciones de corto plazo sin ahogar su operación.</p></div>
+      <div class="card"><div class="ic">≋</div><h3>Flujo de caja</h3><p>Cuánta de tu utilidad se convierte realmente en efectivo disponible.</p></div>
+      <div class="card"><div class="ic">▲</div><h3>Utilidades</h3><p>Márgenes y rentabilidad: qué tan bien convierte ventas en resultados.</p></div>
+      <div class="card"><div class="ic">▣</div><h3>Inventarios</h3><p>Cuánto capital está detenido en bodega y cómo liberarlo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="funciona">
+  <div class="wrap">
+    <div class="eyebrow">Cómo funciona</div>
+    <h2>De tu PDF a un plan de acción, en cuatro pasos</h2>
+    <div class="steps">
+      <div class="step"><b>01</b><h3>Envías tus estados</h3><p>Balance, resultados y flujo de efectivo con sus notas, en PDF.</p></div>
+      <div class="step"><b>02</b><h3>Organizamos y validamos</h3><p>Extraemos las cifras y verificamos que los cuadres contables cierren.</p></div>
+      <div class="step"><b>03</b><h3>Diagnosticamos</h3><p>Calculamos indicadores, riesgos y covenants con apoyo de agentes.</p></div>
+      <div class="step"><b>04</b><h3>Plan y proyecciones</h3><p>Recibes acciones priorizadas y la proyección de caja a 12 meses.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="light" id="recibes">
+  <div class="wrap recibes">
+    <div>
+      <div class="eyebrow">Qué recibes</div>
+      <h2>Un diagnóstico que se entiende y se puede ejecutar</h2>
+      <ul>
+        <li>Indicadores con semáforo frente a referencias de la industria.</li>
+        <li>Hallazgos de las áreas: deuda, cartera, inventarios y contingencias.</li>
+        <li>Plan de acción con palancas concretas para liberar caja.</li>
+      </ul>
+    </div>
+    <div class="report">
+      <div class="logo">VALORIX <span>360</span></div>
+      <h4>Informe de Diagnóstico Financiero y Estratégico</h4>
+      <i></i><i></i><i></i><i></i>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="contacto">
+  <div class="wrap">
+    <div class="form-box">
+      <h2>Solicita tu diagnóstico</h2>
+      <p>Cuéntanos de tu empresa y te contactaremos para revisar tus estados financieros.</p>
+      <form id="f">
+        <label for="n">Nombre</label><input id="n" name="nombre" required maxlength="100" autocomplete="name" placeholder="Tu nombre">
+        <label for="c">Correo</label><input id="c" name="correo" type="email" required maxlength="150" autocomplete="email" placeholder="correo@empresa.com">
+        <label for="e">Empresa</label><input id="e" name="empresa" required maxlength="150" autocomplete="organization" placeholder="Nombre de la empresa">
+        <input class="hp" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-lime" type="submit">Solicitar diagnóstico</button>
+        <div id="msg" role="status"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="logo">VALORIX <span>360</span></span>
+    <span>Bogotá, Colombia · Apoyo a la decisión: no es auditoría ni revisoría fiscal.</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

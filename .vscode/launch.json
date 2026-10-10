@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Valorix360: app web (Streamlit)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "app_valorix.py"],
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Valorix360: extraer PDF de ejemplo a Excel",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/valorix_extractor.py",
+      "args": ["ejemplos/ejemplo_estados_financieros.pdf", "--salida", "salidas/diagnostico_ejemplo.xlsx"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Valorix360: pruebas rápidas",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/probar.py",
+      "console": "integratedTerminal"
+    }
+  ]
+}

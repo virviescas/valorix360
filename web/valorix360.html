@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valorix360 · Asesoría financiera, contable y estratégica</title>
+<style>
+:root { --bg:#0a0a0f; --panel:#14141c; --line:#26262f; --lime:#c6f432; --txt:#ffffff; --mut:#9a9aa8; --light:#f4f5f7; --ink:#0a0a0f; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body { font-family:"Inter","Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--txt); line-height:1.5; }
+a { color:inherit; text-decoration:none; }
+.wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+.eyebrow { color:var(--lime); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+.btn { display:inline-block; border-radius:8px; padding:12px 22px; font-weight:700; font-size:14px; border:1px solid transparent; cursor:pointer; font-family:inherit; }
+.btn-lime { background:var(--lime); color:var(--ink); }
+.btn-lime:hover { filter:brightness(1.08); }
+.btn-ghost { border-color:var(--line); color:var(--txt); }
+.btn[disabled] { opacity:.6; cursor:wait; }
+header { border-bottom:1px solid var(--line); }
+header .wrap { display:flex; align-items:center; justify-content:space-between; height:64px; }
+.logo { font-weight:800; letter-spacing:.12em; font-size:15px; }
+.logo span { color:var(--lime); }
+nav { display:flex; gap:28px; align-items:center; font-size:13px; color:var(--mut); }
+nav a:hover { color:var(--txt); }
+nav .btn { padding:9px 16px; font-size:13px; color:var(--ink); }
+.hero { padding:88px 0; }
+.hero .wrap { display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; }
+.hero h1 { font-size:46px; line-height:1.1; margin:14px 0 20px; letter-spacing:-.02em; }
+.hero p { color:var(--mut); max-width:480px; margin-bottom:28px; }
+.hero .cta { display:flex; gap:12px; flex-wrap:wrap; }
+.hero small { display:block; margin-top:18px; color:var(--mut); font-size:12px; }
+.card-dark { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; }
+.card-dark h4 { font-size:13px; margin-bottom:14px; }
+.row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid var(--line); font-size:13px; color:var(--mut); }
+.badge { font-size:11px; font-weight:700; padding:3px 12px; border-radius:6px; }
+.ok { background:rgba(198,244,50,.18); color:var(--lime); }
+.warn { background:rgba(255,170,60,.18); color:#ffaa3c; }
+.bad { background:rgba(255,90,90,.18); color:#ff6b6b; }
+.light { background:var(--light); color:var(--ink); padding:80px 0; }
+.light .eyebrow { color:#4d7a00; }
+.light h2 { font-size:34px; margin:10px 0 36px; letter-spacing:-.02em; max-width:520px; }
+.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+.card { background:#fff; border:1px solid #e4e6ea; border-radius:12px; padding:24px; }
+.card .ic { width:34px; height:34px; border-radius:8px; background:var(--ink); color:var(--lime); display:grid; place-items:center; margin-bottom:16px; font-weight:800; }
+.card h3 { font-size:16px; margin-bottom:8px; }
+.card p { font-size:13px; color:#5b5f69; }
+.dark { padding:80px 0; }
+.dark h2 { font-size:34px; margin:10px 0 40px; letter-spacing:-.02em; max-width:520px; }
+.steps { display:grid; grid-template-columns:repeat(4,1fr); gap:28px; }
+.step { border-top:1px solid var(--line); padding-top:18px; }
+.step b { display:block; color:var(--lime); font-size:28px; margin-bottom:10px; }
+.step h3 { font-size:15px; margin-bottom:6px; }
+.step p { color:var(--mut); font-size:13px; }
+.recibes { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; }
+.recibes ul { list-style:none; display:grid; gap:16px; }
+.recibes li { display:flex; gap:12px; font-size:15px; color:#2a2d35; }
+.recibes li::before { content:"✓"; color:#4d7a00; font-weight:800; }
+.report { background:var(--ink); color:#fff; border-radius:14px; padding:26px; max-width:320px; margin-left:auto; }
+.report .logo { font-size:12px; margin-bottom:46px; }
+.report h4 { font-size:15px; line-height:1.3; margin-bottom:16px; }
+.report i { display:block; height:6px; background:#26262f; border-radius:3px; margin-top:10px; }
+.report i:nth-child(odd) { width:70%; }
+.form-box { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:48px; max-width:680px; margin:0 auto; }
+.form-box h2 { font-size:28px; margin-bottom:8px; }
+.form-box > p { color:var(--mut); font-size:14px; margin-bottom:28px; }
+label { display:block; font-size:12px; color:var(--mut); margin:16px 0 6px; }
+input { width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; color:var(--txt); font-size:14px; font-family:inherit; }
+input:focus { outline:2px solid var(--lime); outline-offset:-1px; }
+.form-box .btn { width:100%; margin-top:24px; text-align:center; }
+.hp { position:absolute; left:-9999px; }
+#msg { margin-top:14px; font-size:13px; color:var(--lime); min-height:18px; }
+#msg.error { color:#ff6b6b; }
+footer { border-top:1px solid var(--line); padding:26px 0; font-size:12px; color:var(--mut); }
+footer .wrap { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+@media (max-width:860px) {
+  .hero .wrap, .recibes { grid-template-columns:1fr; }
+  .cards, .steps { grid-template-columns:1fr 1fr; }
+  .hero h1 { font-size:34px; }
+  nav a:not(.btn) { display:none; }
+  .report { margin:0; }
+  .form-box { padding:28px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#">VALORIX <span>360</span></a>
+    <nav>
+      <a href="#analizamos">Qué analizamos</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#recibes">Qué recibes</a>
+      <a class="btn btn-lime" href="http://localhost:8501" target="_blank" rel="noopener">Solicita diagnóstico</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Asesoría financiera, contable y estratégica</div>
+      <h1>Convierte tus estados financieros en decisiones de caja y utilidad.</h1>
+      <p>Valorix360 revisa tu liquidez, flujo de caja, utilidades e inventarios, y te entrega un plan claro para mejorar tus resultados y proyecciones.</p>
+      <div class="cta">
+        <a class="btn btn-lime" href="http://localhost:8501" target="_blank" rel="noopener">Solicita diagnóstico</a>
+        <a class="btn btn-ghost" href="#funciona">Ver cómo funciona</a>
+      </div>
+      <small>Tu información financiera se trata de forma confidencial.</small>
+    </div>
+    <div class="card-dark">
+      <h4>Diagnóstico financiero</h4>
+      <div class="row">Liquidez <span class="badge warn">Revisar</span></div>
+      <div class="row">Flujo de caja <span class="badge bad">Atención</span></div>
+      <div class="row">Utilidades <span class="badge ok">Bien</span></div>
+      <div class="row">Inventarios <span class="badge warn">Revisar</span></div>
+      <div class="row">Endeudamiento <span class="badge ok">Bien</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="light" id="analizamos">
+  <div class="wrap">
+    <div class="eyebrow">Qué analizamos</div>
+    <h2>Las cuatro palancas que mueven tu caja</h2>
+    <div class="cards">
+      <div class="card"><div class="ic">$</div><h3>Liquidez</h3><p>Si tu empresa puede cubrir sus obligaciones de corto plazo sin ahogar su operación.</p></div>
+      <div class="card"><div class="ic">≋</div><h3>Flujo de caja</h3><p>Cuánta de tu utilidad se convierte realmente en efectivo disponible.</p></div>
+      <div class="card"><div class="ic">▲</div><h3>Utilidades</h3><p>Márgenes y rentabilidad: qué tan bien convierte ventas en resultados.</p></div>
+      <div class="card"><div class="ic">▣</div><h3>Inventarios</h3><p>Cuánto capital está detenido en bodega y cómo liberarlo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="funciona">
+  <div class="wrap">
+    <div class="eyebrow">Cómo funciona</div>
+    <h2>De tu PDF a un plan de acción, en cuatro pasos</h2>
+    <div class="steps">
+      <div class="step"><b>01</b><h3>Envías tus estados</h3><p>Balance, resultados y flujo de efectivo con sus notas, en PDF.</p></div>
+      <div class="step"><b>02</b><h3>Organizamos y validamos</h3><p>Extraemos las cifras y verificamos que los cuadres contables cierren.</p></div>
+      <div class="step"><b>03</b><h3>Diagnosticamos</h3><p>Calculamos indicadores, riesgos y covenants con apoyo de agentes.</p></div>
+      <div class="step"><b>04</b><h3>Plan y proyecciones</h3><p>Recibes acciones priorizadas y la proyección de caja a 12 meses.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="light" id="recibes">
+  <div class="wrap recibes">
+    <div>
+      <div class="eyebrow">Qué recibes</div>
+      <h2>Un diagnóstico que se entiende y se puede ejecutar</h2>
+      <ul>
+        <li>Indicadores con semáforo frente a referencias de la industria.</li>
+        <li>Hallazgos de las áreas: deuda, cartera, inventarios y contingencias.</li>
+        <li>Plan de acción con palancas concretas para liberar caja.</li>
+      </ul>
+    </div>
+    <div class="report">
+      <div class="logo">VALORIX <span>360</span></div>
+      <h4>Informe de Diagnóstico Financiero y Estratégico</h4>
+      <i></i><i></i><i></i><i></i>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="contacto">
+  <div class="wrap">
+    <div class="form-box">
+      <h2>Solicita tu diagnóstico</h2>
+      <p>Cuéntanos de tu empresa y te contactaremos para revisar tus estados financieros.</p>
+      <form id="f">
+        <label for="n">Nombre</label><input id="n" name="nombre" required maxlength="100" autocomplete="name" placeholder="Tu nombre">
+        <label for="c">Correo</label><input id="c" name="correo" type="email" required maxlength="150" autocomplete="email" placeholder="correo@empresa.com">
+        <label for="e">Empresa</label><input id="e" name="empresa" required maxlength="150" autocomplete="organization" placeholder="Nombre de la empresa">
+        <input class="hp" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-lime" type="submit">Solicitar diagnóstico</button>
+        <div id="msg" role="status"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="logo">VALORIX <span>360</span></span>
+    <span>Bogotá, Colombia · Apoyo a la decisión: no es auditoría ni revisoría fiscal.</span>
+  </div>
+</footer>
+
+<script>
+const ENDPOINT = 'https://formsubmit.co/ajax/virviescas_2318@hotmail.com';
+
+const form = document.getElementById('f');
+const msg = document.getElementById('msg');
+const boton = form.querySelector('button[type=submit]');
+
+function aviso(texto, error) {
+  msg.textContent = texto;
+  msg.classList.toggle('error', Boolean(error));
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (form._honey.value) return;
+  boton.disabled = true;
+  aviso('Enviando...');
+  try {
+    const r = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        nombre: form.nombre.value,
+        correo: form.correo.value,
+        empresa: form.empresa.value,
+        _subject: 'Nueva solicitud de diagnóstico Valorix360',
+        _replyto: form.correo.value,
+        _template: 'table',
+        _captcha: 'false',
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok || String(data.success) !== 'true') throw new Error(data.message || 'Error de envío');
+    aviso('Gracias, ' + form.nombre.value + '. Recibimos tu solicitud y te escribiremos pronto.');
+    form.reset();
+  } catch (err) {
+    aviso('No pudimos enviar tu solicitud. Inténtalo de nuevo en unos minutos.', true);
+  } finally {
+    boton.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
