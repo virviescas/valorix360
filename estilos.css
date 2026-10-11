@@ -18,11 +18,11 @@ section[data-testid="stSidebar"] h2 { font-size:12px; letter-spacing:.14em; text
 .vx-logo span { color:var(--lime); }
 
 /* Botones */
-button[data-testid="stBaseButton-primary"] { background:var(--lime); color:var(--ink); border:0; font-weight:700; border-radius:8px; }
-button[data-testid="stBaseButton-primary"]:hover { background:var(--lime); filter:brightness(1.08); color:var(--ink); }
-button[data-testid="stBaseButton-primary"] p { color:var(--ink); }
-button[data-testid="stBaseButton-secondary"] { background:var(--panel); border:1px solid var(--line); border-radius:8px; color:#fff; }
-button[data-testid="stBaseButton-secondary"]:hover { border-color:var(--lime); color:var(--lime); }
+button[data-testid^="stBaseButton-primary"] { background:var(--lime); color:var(--ink); border:0; font-weight:700; border-radius:8px; }
+button[data-testid^="stBaseButton-primary"]:hover { background:var(--lime); filter:brightness(1.08); color:var(--ink); }
+button[data-testid^="stBaseButton-primary"] p { color:var(--ink); }
+button[data-testid^="stBaseButton-secondary"] { background:var(--panel); border:1px solid var(--line); border-radius:8px; color:#fff; }
+button[data-testid^="stBaseButton-secondary"]:hover { border-color:var(--lime); color:var(--lime); }
 
 /* Carga de archivos */
 [data-testid="stFileUploaderDropzone"] { background:var(--panel); border:1px dashed #3a3a46; border-radius:12px; }

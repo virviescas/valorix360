@@ -31,7 +31,7 @@ ICONO = {"ok": "✅", "atencion": "⚠️", "riesgo": "🔴"}
 ESTADO = {"Bien": "✅ Bien", "Revisar": "⚠️ Revisar", "n/d": "—"}
 AGENTES = ("contable", "financiero", "cumplimiento")
 PLANTILLA_DEFECTO = Path(__file__).with_name("valorix360_plantilla_diagnostico.xlsx")
-LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(encoding="utf-8").strip().replace("<svg ", "<svg width='26' height='26' ", 1)
+LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(encoding="utf-8").strip().replace('width="190" height="190"', "width='30' height='30'", 1)
 
 st.set_page_config(page_title="Valorix360 · Diagnóstico financiero", page_icon=Image.open(Path(__file__).with_name("assets") / "logo.png"),
                    layout="wide")
