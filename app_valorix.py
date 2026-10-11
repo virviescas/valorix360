@@ -19,6 +19,7 @@ import streamlit as st
 
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
 from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar_notas
+from valorix_informe import generar_informe_pdf
 from valorix_motor import (ADIC_SPEC, ESCENARIOS, calcular, extraer_hechos, fmt_valor, generar_hallazgos, mm, n,
                            proyectar)
 
@@ -88,6 +89,7 @@ if pdf and st.button("Procesar PDF", type="primary"):
         st.session_state.update(res=res, notas=notas, nombre=Path(pdf.name).stem, chat={a: [] for a in AGENTES},
                                 hechos=extraer_hechos(notas, factor if factor is not None else (res["factor"] or 1.0)))
         st.session_state.pop("xlsx", None)
+        st.session_state.pop("pdf", None)
 
 res = st.session_state.get("res")
 if res is None:
@@ -295,3 +297,9 @@ if "xlsx" in st.session_state:
     st.download_button("⬇️ Descargar diagnóstico (.xlsx)", st.session_state["xlsx"],
                        file_name=f"diagnostico_{st.session_state.get('nombre', 'cliente')}.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+if st.button("Generar informe PDF"):
+    st.session_state["pdf"] = generar_informe_pdf(calc, hall, proy, empresa=st.session_state.get("nombre", "Cliente"), escenario=esc)
+if "pdf" in st.session_state:
+    st.download_button("⬇️ Descargar informe (.pdf)", st.session_state["pdf"],
+                       file_name=f"informe_{st.session_state.get('nombre', 'cliente')}.pdf", mime="application/pdf")
