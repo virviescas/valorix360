@@ -1,20 +1,33 @@
-"""Pruebas de cuentas, empresas y diagnósticos guardados."""
+﻿"""Pruebas de cuentas, empresas y diagnósticos guardados.
+
+Por defecto corren sobre SQLite. Con TEST_DATABASE_URL (PostgreSQL de prueba, se BORRAN sus tablas) corren también sobre él.
+"""
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-
+from sqlalchemy import text
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.schema import CreateTable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from valorix_db import MAX_FALLOS, Almacen, ErrorCuenta  # noqa: E402
+from valorix_db import MAX_FALLOS, Almacen, ErrorCuenta, metadata, url_base  # noqa: E402
 
 CLAVE = "una-clave-segura-123"
 
 
-@pytest.fixture
-def db(tmp_path):
-    return Almacen(tmp_path / "t.db")
+@pytest.fixture(params=["sqlite"] + (["postgres"] if os.environ.get("TEST_DATABASE_URL") else []))
+def db(request, tmp_path):
+    if request.param == "sqlite":
+        yield Almacen(tmp_path / "t.db")
+        return
+    almacen = Almacen(url=os.environ["TEST_DATABASE_URL"])
+    metadata.drop_all(almacen.engine)
+    metadata.create_all(almacen.engine)
+    yield almacen
+    metadata.drop_all(almacen.engine)
 
 
 def _usuario(db, correo="ana@empresa.com"):
@@ -31,8 +44,8 @@ def test_crear_y_autenticar(db):
 
 def test_la_clave_no_se_guarda_en_claro(db):
     _usuario(db)
-    with db._con() as con:
-        guardada = con.execute("SELECT clave FROM usuarios").fetchone()["clave"]
+    with db.engine.connect() as con:
+        guardada = con.execute(text("SELECT clave FROM usuarios")).scalar()
     assert CLAVE not in guardada and guardada.startswith("scrypt$")
 
 
@@ -55,9 +68,9 @@ def test_bloqueo_tras_intentos_fallidos(db):
     for _ in range(MAX_FALLOS):
         assert db.autenticar("ana@empresa.com", "mala-clave-mala") is None
     assert db.autenticar("ana@empresa.com", CLAVE) is None  # bloqueada aunque la clave sea correcta
-    with db._con() as con:
+    with db.engine.begin() as con:
         pasado = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
-        con.execute("UPDATE usuarios SET bloqueado_hasta = ?", (pasado,))
+        con.execute(text("UPDATE usuarios SET bloqueado_hasta = :b"), {"b": pasado})
     assert db.autenticar("ana@empresa.com", CLAVE) is not None
 
 
@@ -100,3 +113,26 @@ def test_eliminar_usuario_borra_todo(db):
     db.eliminar_usuario(uid)
     assert db.cargar(uid, did) is None and db.listar_empresas(uid) == []
     assert db.autenticar("ana@empresa.com", CLAVE) is None
+
+
+# ---------- Compatibilidad con PostgreSQL (sin servidor: se valida el SQL generado) ----------
+def test_esquema_compila_para_postgresql():
+    dialecto = postgresql.dialect()
+    ddl = " ".join(str(CreateTable(t).compile(dialect=dialecto)) for t in metadata.sorted_tables)
+    assert "SERIAL" in ddl or "GENERATED" in ddl
+    assert "ON DELETE CASCADE" in ddl
+
+
+@pytest.mark.parametrize("entrada,esperado", [
+    ("postgres://u:p@h:5432/d", "postgresql+psycopg://u:p@h:5432/d"),
+    ("postgresql://u:p@h/d?sslmode=require", "postgresql+psycopg://u:p@h/d?sslmode=require"),
+    ("postgresql+psycopg://u:p@h/d", "postgresql+psycopg://u:p@h/d")])
+def test_url_de_postgres_se_normaliza(entrada, esperado):
+    assert url_base(url=entrada) == esperado
+
+
+def test_database_url_tiene_prioridad_sobre_sqlite(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", "postgres://u:p@h/d")
+    assert url_base(tmp_path / "x.db").startswith("postgresql+psycopg://")
+    monkeypatch.delenv("DATABASE_URL")
+    assert url_base(tmp_path / "x.db").startswith("sqlite:///")

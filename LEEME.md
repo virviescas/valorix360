@@ -37,7 +37,8 @@ Debe mostrar 8 validaciones OK y crear `salidas/prueba.xlsx`.
 - `VALORIX_PASSWORD`   acceso con contraseña única (solo cuando VALORIX_CUENTAS=0)
 - `VALORIX_CUENTAS`    1 (por defecto) = cuentas de usuario, empresas y diagnósticos guardados; 0 = modo local sin cuentas
 - `VALORIX_CODIGO_INVITACION`  si se define, el registro exige ese código
-- `VALORIX_DB`         ruta del archivo SQLite (por defecto `data/valorix.db`; en hosting con disco efímero usa un volumen persistente)
+- `VALORIX_DB`         ruta del archivo SQLite (por defecto `data/valorix.db`)
+- `DATABASE_URL`       URL de PostgreSQL (por ejemplo `postgresql://usuario:clave@host:5432/base?sslmode=require`); si existe, reemplaza a SQLite y las cuentas sobreviven a reinicios y despliegues. Guárdala como secreto del hosting, nunca en el código.
 - `ANTHROPIC_API_KEY`  habilita los agentes con IA (sin clave, responden con reglas)
 - `VALORIX_MODELO`     modelo de los agentes
 

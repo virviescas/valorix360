@@ -1,5 +1,6 @@
-"""VALORIX360 · Cuentas de usuario, empresas y diagnósticos guardados (SQLite).
+"""VALORIX360 · Cuentas de usuario, empresas y diagnósticos guardados.
 
+Usa SQLite por defecto (archivo local) o PostgreSQL si se define DATABASE_URL, con las mismas consultas (SQLAlchemy Core).
 Toda lectura o escritura se filtra por `usuario_id`, de modo que un usuario nunca ve datos de otro.
 Las claves se guardan con scrypt (sal aleatoria) y hay bloqueo temporal tras varios intentos fallidos.
 """
@@ -10,10 +11,12 @@ import json
 import os
 import re
 import secrets
-import sqlite3
-from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from sqlalchemy import (Column, ForeignKey, Index, Integer, MetaData, Table, Text, UniqueConstraint, create_engine, delete, event,
+                        insert, select, update)
+from sqlalchemy.exc import IntegrityError
 
 RUTA_DEFECTO = Path(os.environ.get("VALORIX_DB") or Path(__file__).with_name("data") / "valorix.db")
 MAX_FALLOS = 5
@@ -22,19 +25,23 @@ MIN_CLAVE = 10
 MAX_JSON = 2_000_000
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s]{2,}$")
 
-ESQUEMA = """
-CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY, correo TEXT NOT NULL UNIQUE, nombre TEXT NOT NULL, clave TEXT NOT NULL,
-    fallos INTEGER NOT NULL DEFAULT 0, bloqueado_hasta TEXT, creado TEXT NOT NULL, consentimiento TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS empresas (
-    id INTEGER PRIMARY KEY, usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    nombre TEXT NOT NULL, creado TEXT NOT NULL, UNIQUE (usuario_id, nombre));
-CREATE TABLE IF NOT EXISTS diagnosticos (
-    id INTEGER PRIMARY KEY, usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    empresa_id INTEGER NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
-    nombre TEXT NOT NULL, sector TEXT NOT NULL, creado TEXT NOT NULL, datos TEXT NOT NULL);
-CREATE INDEX IF NOT EXISTS ix_diag_empresa ON diagnosticos (usuario_id, empresa_id, creado);
-"""
+metadata = MetaData()
+usuarios = Table(
+    "usuarios", metadata,
+    Column("id", Integer, primary_key=True), Column("correo", Text, nullable=False, unique=True),
+    Column("nombre", Text, nullable=False), Column("clave", Text, nullable=False),
+    Column("fallos", Integer, nullable=False, server_default="0"), Column("bloqueado_hasta", Text),
+    Column("creado", Text, nullable=False), Column("consentimiento", Text, nullable=False))
+empresas = Table(
+    "empresas", metadata,
+    Column("id", Integer, primary_key=True), Column("usuario_id", Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("nombre", Text, nullable=False), Column("creado", Text, nullable=False), UniqueConstraint("usuario_id", "nombre"))
+diagnosticos = Table(
+    "diagnosticos", metadata,
+    Column("id", Integer, primary_key=True), Column("usuario_id", Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("empresa_id", Integer, ForeignKey("empresas.id", ondelete="CASCADE"), nullable=False),
+    Column("nombre", Text, nullable=False), Column("sector", Text, nullable=False), Column("creado", Text, nullable=False),
+    Column("datos", Text, nullable=False), Index("ix_diag_empresa", "usuario_id", "empresa_id", "creado"))
 
 
 class ErrorCuenta(ValueError):
@@ -64,23 +71,25 @@ def _verificar(clave, almacenado):
 _HASH_FALSO = _hash("clave-inexistente")  # iguala el tiempo de respuesta cuando el correo no existe
 
 
-class Almacen:
-    def __init__(self, ruta=None):
-        self.ruta = Path(ruta or RUTA_DEFECTO)
-        self.ruta.parent.mkdir(parents=True, exist_ok=True)
-        with self._con() as con:
-            con.executescript(ESQUEMA)
+def url_base(ruta=None, url=None):
+    """URL SQLAlchemy: DATABASE_URL (PostgreSQL) si existe; si no, un archivo SQLite."""
+    url = url or os.environ.get("DATABASE_URL")
+    if not url:
+        ruta = Path(ruta or RUTA_DEFECTO)
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        return f"sqlite:///{ruta.as_posix()}"
+    for prefijo in ("postgres://", "postgresql://"):
+        if url.startswith(prefijo):
+            return "postgresql+psycopg://" + url[len(prefijo):]
+    return url
 
-    @contextmanager
-    def _con(self):
-        con = sqlite3.connect(self.ruta, timeout=10)
-        con.row_factory = sqlite3.Row
-        con.execute("PRAGMA foreign_keys = ON")
-        try:
-            yield con
-            con.commit()
-        finally:
-            con.close()
+
+class Almacen:
+    def __init__(self, ruta=None, url=None):
+        self.engine = create_engine(url_base(ruta, url), pool_pre_ping=True)
+        if self.engine.dialect.name == "sqlite":
+            event.listen(self.engine, "connect", lambda c, _: c.execute("PRAGMA foreign_keys = ON"))
+        metadata.create_all(self.engine)
 
     # ---------------- usuarios ----------------
     def crear_usuario(self, correo, nombre, clave, consentimiento):
@@ -93,37 +102,39 @@ class Almacen:
             raise ErrorCuenta(f"La contraseña debe tener al menos {MIN_CLAVE} caracteres.")
         if not consentimiento:
             raise ErrorCuenta("Debes autorizar el tratamiento de tus datos para crear la cuenta.")
+        ahora = _ahora().isoformat()
         try:
-            with self._con() as con:
-                cur = con.execute("INSERT INTO usuarios (correo, nombre, clave, creado, consentimiento) VALUES (?,?,?,?,?)",
-                                  (correo, nombre, _hash(clave), _ahora().isoformat(), _ahora().isoformat()))
-                return cur.lastrowid
-        except sqlite3.IntegrityError:
+            with self.engine.begin() as con:
+                r = con.execute(insert(usuarios).values(correo=correo, nombre=nombre, clave=_hash(clave), creado=ahora,
+                                                        consentimiento=ahora))
+                return r.inserted_primary_key[0]
+        except IntegrityError:
             raise ErrorCuenta("No se pudo crear la cuenta con esos datos.") from None
 
     def autenticar(self, correo, clave):
         """Devuelve dict(id, nombre, correo) o None. Mensaje único para no revelar si el correo existe."""
         correo = (correo or "").strip().lower()
-        with self._con() as con:
-            u = con.execute("SELECT * FROM usuarios WHERE correo = ?", (correo,)).fetchone()
+        with self.engine.begin() as con:
+            u = con.execute(select(usuarios).where(usuarios.c.correo == correo)).mappings().first()
             if u is None:
                 _verificar(clave or "", _HASH_FALSO)
                 return None
             if u["bloqueado_hasta"] and datetime.fromisoformat(u["bloqueado_hasta"]) > _ahora():
                 return None
             if _verificar(clave or "", u["clave"]):
-                con.execute("UPDATE usuarios SET fallos = 0, bloqueado_hasta = NULL WHERE id = ?", (u["id"],))
+                con.execute(update(usuarios).where(usuarios.c.id == u["id"]).values(fallos=0, bloqueado_hasta=None))
                 return dict(id=u["id"], nombre=u["nombre"], correo=u["correo"])
             fallos = u["fallos"] + 1
             bloqueo = (_ahora() + timedelta(minutes=BLOQUEO_MIN)).isoformat() if fallos >= MAX_FALLOS else None
-            con.execute("UPDATE usuarios SET fallos = ?, bloqueado_hasta = ? WHERE id = ?",
-                        (0 if bloqueo else fallos, bloqueo, u["id"]))
+            con.execute(update(usuarios).where(usuarios.c.id == u["id"]).values(fallos=0 if bloqueo else fallos, bloqueado_hasta=bloqueo))
             return None
 
     def eliminar_usuario(self, uid):
         """Borra la cuenta y todos sus datos (derecho de supresión)."""
-        with self._con() as con:
-            con.execute("DELETE FROM usuarios WHERE id = ?", (uid,))
+        with self.engine.begin() as con:
+            con.execute(delete(diagnosticos).where(diagnosticos.c.usuario_id == uid))
+            con.execute(delete(empresas).where(empresas.c.usuario_id == uid))
+            con.execute(delete(usuarios).where(usuarios.c.id == uid))
 
     # ---------------- empresas ----------------
     def crear_empresa(self, uid, nombre):
@@ -131,44 +142,47 @@ class Almacen:
         if not 2 <= len(nombre) <= 120:
             raise ErrorCuenta("Escribe el nombre de la empresa (entre 2 y 120 caracteres).")
         try:
-            with self._con() as con:
-                return con.execute("INSERT INTO empresas (usuario_id, nombre, creado) VALUES (?,?,?)",
-                                   (uid, nombre, _ahora().isoformat())).lastrowid
-        except sqlite3.IntegrityError:
+            with self.engine.begin() as con:
+                r = con.execute(insert(empresas).values(usuario_id=uid, nombre=nombre, creado=_ahora().isoformat()))
+                return r.inserted_primary_key[0]
+        except IntegrityError:
             raise ErrorCuenta("Ya tienes una empresa con ese nombre.") from None
 
     def listar_empresas(self, uid):
-        with self._con() as con:
-            return [dict(r) for r in con.execute("SELECT id, nombre FROM empresas WHERE usuario_id = ? ORDER BY nombre", (uid,))]
+        with self.engine.connect() as con:
+            q = select(empresas.c.id, empresas.c.nombre).where(empresas.c.usuario_id == uid).order_by(empresas.c.nombre)
+            return [dict(r) for r in con.execute(q).mappings()]
 
     def eliminar_empresa(self, uid, eid):
-        with self._con() as con:
-            con.execute("DELETE FROM empresas WHERE id = ? AND usuario_id = ?", (eid, uid))
+        with self.engine.begin() as con:
+            if con.execute(select(empresas.c.id).where(empresas.c.id == eid, empresas.c.usuario_id == uid)).first():
+                con.execute(delete(diagnosticos).where(diagnosticos.c.empresa_id == eid, diagnosticos.c.usuario_id == uid))
+                con.execute(delete(empresas).where(empresas.c.id == eid, empresas.c.usuario_id == uid))
 
     # ---------------- diagnósticos ----------------
     def guardar(self, uid, eid, nombre, sector, datos):
         texto = json.dumps(datos, ensure_ascii=False, default=str)
         if len(texto) > MAX_JSON:
             raise ErrorCuenta("El diagnóstico es demasiado grande para guardarlo.")
-        with self._con() as con:
-            if not con.execute("SELECT 1 FROM empresas WHERE id = ? AND usuario_id = ?", (eid, uid)).fetchone():
+        with self.engine.begin() as con:
+            if not con.execute(select(empresas.c.id).where(empresas.c.id == eid, empresas.c.usuario_id == uid)).first():
                 raise ErrorCuenta("La empresa no existe.")
-            return con.execute("INSERT INTO diagnosticos (usuario_id, empresa_id, nombre, sector, creado, datos) VALUES (?,?,?,?,?,?)",
-                               (uid, eid, (nombre or "Diagnóstico")[:150], sector, _ahora().isoformat(), texto)).lastrowid
+            r = con.execute(insert(diagnosticos).values(usuario_id=uid, empresa_id=eid, nombre=(nombre or "Diagnóstico")[:150],
+                                                        sector=sector, creado=_ahora().isoformat(), datos=texto))
+            return r.inserted_primary_key[0]
 
     def listar(self, uid, eid):
-        with self._con() as con:
-            return [dict(r) for r in con.execute(
-                "SELECT id, nombre, sector, creado FROM diagnosticos WHERE usuario_id = ? AND empresa_id = ? ORDER BY creado DESC",
-                (uid, eid))]
+        with self.engine.connect() as con:
+            q = (select(diagnosticos.c.id, diagnosticos.c.nombre, diagnosticos.c.sector, diagnosticos.c.creado)
+                 .where(diagnosticos.c.usuario_id == uid, diagnosticos.c.empresa_id == eid).order_by(diagnosticos.c.creado.desc()))
+            return [dict(r) for r in con.execute(q).mappings()]
 
     def cargar(self, uid, did):
-        with self._con() as con:
-            r = con.execute("SELECT id, nombre, sector, creado, datos FROM diagnosticos WHERE id = ? AND usuario_id = ?",
-                            (did, uid)).fetchone()
+        with self.engine.connect() as con:
+            r = con.execute(select(diagnosticos).where(diagnosticos.c.id == did, diagnosticos.c.usuario_id == uid)).mappings().first()
         return None if r is None else dict(id=r["id"], nombre=r["nombre"], sector=r["sector"], creado=r["creado"],
                                            datos=json.loads(r["datos"]))
 
     def eliminar_diagnostico(self, uid, did):
-        with self._con() as con:
-            con.execute("DELETE FROM diagnosticos WHERE id = ? AND usuario_id = ?", (did, uid))
+        with self.engine.begin() as con:
+            con.execute(delete(diagnosticos).where(diagnosticos.c.id == did, diagnosticos.c.usuario_id == uid))
