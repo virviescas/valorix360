@@ -70,7 +70,7 @@ def generar_informe_pdf(calc, hall, proy, empresa="Cliente", escenario="Base"):
     # Portada y resumen ejecutivo
     h += [Paragraph("VALORIX <font color='#7aa800'>360</font>", e["h2"]), Spacer(1, 1.2 * cm),
           P("Informe de diagnóstico financiero y estratégico", "h1"),
-          P(f"{empresa} · {date.today().strftime('%d/%m/%Y')}", "small"), Spacer(1, 0.6 * cm),
+          P(f"{empresa} · {date.today().strftime('%d/%m/%Y')} · Referencias: {calc.get('sector', 'General')}", "small"), Spacer(1, 0.6 * cm),
           P("Resumen ejecutivo", "h2")]
     filas = [["Área", "Estado", "Conclusión"]]
     for ag, v in hall["veredictos"].items():

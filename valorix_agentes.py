@@ -63,6 +63,7 @@ def construir_contexto(calc, hall, notas, hechos, out, validaciones=None, max_no
     """Estructura compacta y serializable con TODO lo que los agentes pueden usar."""
     ctx = {
         "unidad": "millones de COP",
+        "sector_de_referencia": calc.get("sector", "General"),
         "datos_base": {k: [_r(v[0]), _r(v[1])] for k, v in out.items() if isinstance(v, (list, tuple))},
         "indicadores": [dict(id=m["id"], nombre=m["nombre"], actual=_r(m["actual"]), anterior=_r(m["anterior"]),
                              referencia=m["ref"], estado=m["estado"]) for m in calc["metricas"] if m["actual"] is not None],

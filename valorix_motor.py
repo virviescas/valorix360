@@ -45,6 +45,18 @@ ADIC_SPEC = [
 ]
 ADIC_DEFECTO = {k: v for k, _, _, _, v in ADIC_SPEC}
 
+# Referencias orientativas por sector; reemplazan las generales por indicador. Validar con datos de mercado antes de uso comercial.
+SECTORES = ("General", "Comercio", "Manufactura", "Servicios")
+REFERENCIAS_SECTOR = {
+    "Comercio": dict(razon_corriente=1.3, prueba_acida=0.6, margen_bruto=0.25, margen_ebitda=0.08, margen_neto=0.03,
+                     rotacion_inv=8.0, dias_inv=45.0, dias_cartera=30.0, dias_prov=45.0, ciclo_caja=45.0, endeudamiento=0.65,
+                     margen_seguridad=0.10),
+    "Manufactura": dict(prueba_acida=0.8, margen_ebitda=0.12, margen_neto=0.06, rotacion_inv=5.0, dias_inv=75.0,
+                        dias_cartera=50.0, dias_prov=50.0, ciclo_caja=75.0),
+    "Servicios": dict(prueba_acida=1.2, margen_bruto=0.45, margen_ebitda=0.18, margen_neto=0.10, rotacion_inv=12.0,
+                      dias_inv=15.0, dias_cartera=60.0, dias_prov=30.0, ciclo_caja=45.0, endeudamiento=0.55),
+}
+
 
 # --------------------------------------------------------------------------------------
 # Formato en español (1.234,5)
@@ -109,14 +121,16 @@ def d(a, b):
 # --------------------------------------------------------------------------------------
 # Cálculo principal
 # --------------------------------------------------------------------------------------
-def calcular(out, adic=None):
-    """out: {clave: [actual, anterior]} en millones. adic: supuestos adicionales (ver ADIC_SPEC)."""
+def calcular(out, adic=None, sector="General"):
+    """out: {clave: [actual, anterior]} en millones. adic: supuestos adicionales (ver ADIC_SPEC). sector: ver SECTORES."""
     A = dict(ADIC_DEFECTO)
     A.update({k: v for k, v in (adic or {}).items() if v is not None})
+    refs_sector = REFERENCIAS_SECTOR.get(sector, {})
     p0, p1 = periodo(out, 0), periodo(out, 1)
     metricas = []
 
     def M(id_, grupo, nombre, a, p=None, ref=None, mejor=None, fmt="x", fuente="", nota=""):
+        ref = refs_sector.get(id_, ref)
         estado = "n/d"
         if a is not None and ref is not None and mejor:
             estado = "Bien" if (a >= ref if mejor == "Mayor" else a <= ref) else "Revisar"
@@ -298,7 +312,7 @@ def calcular(out, adic=None):
     estres["covenant_dn"] = (None if lim is None or estres["dn_ebitda"][1] is None else
                              ("Cumple" if estres["dn_ebitda"][1] <= lim else "INCUMPLE"))
 
-    return dict(adic=A, p0=p0, p1=p1, metricas=metricas, m={x["id"]: x for x in metricas}, covenants=covenants,
+    return dict(adic=A, sector=sector, p0=p0, p1=p1, metricas=metricas, m={x["id"]: x for x in metricas}, covenants=covenants,
                 vencimientos=vencimientos, estres=estres, zona_altman=zona, ltm=dict(ebitda=ltm_ebitda, ing=ltm_ing),
                 deuda=dict(total=dt0, neta=dn0), tasa_efectiva=tasa_ef, wacc=wacc, roic=roic, eva=eva, cap_inv=cap_inv)
 

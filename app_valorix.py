@@ -20,7 +20,7 @@ import streamlit as st
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
 from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar_notas
 from valorix_informe import generar_informe_pdf
-from valorix_motor import (ADIC_SPEC, ESCENARIOS, calcular, extraer_hechos, fmt_valor, generar_hallazgos, mm, n,
+from valorix_motor import (ADIC_SPEC, ESCENARIOS, SECTORES, calcular, extraer_hechos, fmt_valor, generar_hallazgos, mm, n,
                            proyectar)
 
 ETIQUETAS = {
@@ -64,6 +64,8 @@ with st.sidebar:
     dias_act = st.number_input("Días del periodo actual (0 = automático)", 0, 366, 0)
     dias_ant = st.number_input("Días del periodo anterior (0 = igual al actual)", 0, 366, 0)
     da_incluida = st.checkbox("La depreciación está dentro de los gastos operativos", value=True)
+    sector = st.selectbox("Sector (referencias de los semáforos)", SECTORES,
+                          help="Ajusta las referencias de liquidez, márgenes y rotaciones. Son orientativas: valídalas con tu asesor.")
     plantilla_subida = st.file_uploader("Plantilla Excel (opcional)", type=["xlsx"])
     st.divider()
     usar_ia = st.checkbox("Agentes con IA", value=False,
@@ -133,7 +135,7 @@ with t_sup:
         adic[k] = None if v is None else (v / 100 if tipo == "pct" else v)
 
 # ---------------- Cálculo ----------------
-calc = calcular(salida_ed, adic)
+calc = calcular(salida_ed, adic, sector)
 hall = generar_hallazgos(calc, hechos, res["validaciones"])
 ctx = construir_contexto(calc, hall, notas, hechos, salida_ed, res["validaciones"])
 

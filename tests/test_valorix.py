@@ -96,6 +96,30 @@ def test_proyeccion_caja_final_es_ultimo_mes(caso):
     assert p["caja_min"] == min(p["caja"])
 
 
+# ---------- Sectores ----------
+def test_sector_cambia_las_referencias(caso):
+    salida = caso["res"]["salida"]
+    general = calcular(salida, caso["adic"])["m"]
+    comercio = calcular(salida, caso["adic"], "Comercio")
+    assert general["dias_inv"]["ref"] == 60.0
+    assert comercio["m"]["dias_inv"]["ref"] == 45.0
+    assert comercio["sector"] == "Comercio"
+    assert comercio["m"]["ctn"]["ref"] == 0.0
+
+
+def test_sector_desconocido_usa_referencias_generales(caso):
+    salida = caso["res"]["salida"]
+    base = calcular(salida, caso["adic"])["m"]["razon_corriente"]["ref"]
+    assert calcular(salida, caso["adic"], "Inexistente")["m"]["razon_corriente"]["ref"] == base
+
+
+def test_sectores_no_alteran_valores_calculados(caso):
+    salida = caso["res"]["salida"]
+    a = calcular(salida, caso["adic"])["m"]
+    b = calcular(salida, caso["adic"], "Servicios")["m"]
+    assert all(a[k]["actual"] == b[k]["actual"] for k in a)
+
+
 # ---------- Informe PDF ----------
 def test_informe_pdf_se_genera(caso):
     from valorix_informe import generar_informe_pdf
