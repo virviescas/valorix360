@@ -16,9 +16,12 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv
 from PIL import Image
 
-from app_cuentas import acceso, barra_cuenta, empaquetar, pestana_historial
+load_dotenv(Path(__file__).with_name(".env"))  # no pisa variables ya definidas (p. ej. secretos del hosting)
+
+from app_cuentas import acceso, barra_cuenta, empaquetar, pestana_historial  # noqa: E402
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
 from valorix_db import Almacen
 from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar_notas
