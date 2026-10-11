@@ -17,7 +17,9 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from app_cuentas import acceso, barra_cuenta, empaquetar, pestana_historial
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
+from valorix_db import Almacen
 from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar_notas
 from valorix_informe import generar_informe_pdf
 from valorix_motor import (ADIC_SPEC, ESCENARIOS, SECTORES, calcular, extraer_hechos, fmt_valor, generar_hallazgos, mm, n,
@@ -32,9 +34,20 @@ PLANTILLA_DEFECTO = Path(__file__).with_name("valorix360_plantilla_diagnostico.x
 st.set_page_config(page_title="Valorix360 · Diagnóstico financiero", page_icon="📈", layout="wide")
 st.markdown(f"<style>{Path(__file__).with_name('estilos.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
-# ---------------- Acceso opcional ----------------
+# ---------------- Acceso ----------------
+# VALORIX_CUENTAS=0 desactiva cuentas y guardado (modo local de un solo usuario).
+CUENTAS = os.environ.get("VALORIX_CUENTAS", "1") != "0"
+
+
+@st.cache_resource
+def almacen():
+    return Almacen()
+
+
+db = almacen() if CUENTAS else None
+usuario = acceso(db) if CUENTAS else None
 clave = os.environ.get("VALORIX_PASSWORD")
-if clave and st.session_state.get("ok") is not True:
+if not CUENTAS and clave and st.session_state.get("ok") is not True:
     st.title("Valorix360")
     ingreso = st.text_input("Contraseña", type="password")
     if ingreso and hmac.compare_digest(ingreso.encode(), clave.encode()):
@@ -55,12 +68,13 @@ st.caption("Los archivos se procesan en archivos temporales que se eliminan al t
 
 # ---------------- Barra lateral ----------------
 with st.sidebar:
+    empresa_id = barra_cuenta(db, usuario) if CUENTAS else None
     st.header("Opciones")
     unidad = st.selectbox("Unidad de las cifras", ["Auto", "pesos", "miles", "millones"])
     dias_act = st.number_input("Días del periodo actual (0 = automático)", 0, 366, 0)
     dias_ant = st.number_input("Días del periodo anterior (0 = igual al actual)", 0, 366, 0)
     da_incluida = st.checkbox("La depreciación está dentro de los gastos operativos", value=True)
-    sector = st.selectbox("Sector (referencias de los semáforos)", SECTORES,
+    sector = st.selectbox("Sector (referencias de los semáforos)", SECTORES, key="sector",
                           help="Ajusta las referencias de liquidez, márgenes y rotaciones. Son orientativas: valídalas con tu asesor.")
     plantilla_subida = st.file_uploader("Plantilla Excel (opcional)", type=["xlsx"])
     st.divider()
@@ -108,12 +122,14 @@ if pdf and st.button("Procesar archivo", type="primary"):
 res = st.session_state.get("res")
 if res is None:
     st.info("Sube un PDF, Excel o CSV y pulsa **Procesar archivo**.")
+    if CUENTAS:
+        pestana_historial(db, usuario, empresa_id, None, "", sector)
     st.stop()
 notas, hechos = st.session_state["notas"], st.session_state["hechos"]
 
 tabs = st.tabs(["1 · Revisión", "2 · Datos", "3 · Supuestos", "4 · Diagnóstico", "5 · Indicadores",
-                "6 · Proyección", "7 · Agentes", "8 · Notas y líneas sin mapear"])
-t_rev, t_dat, t_sup, t_dia, t_ind, t_pro, t_age, t_not = tabs
+                "6 · Proyección", "7 · Agentes", "8 · Notas y líneas sin mapear"] + (["9 · Historial"] if CUENTAS else []))
+t_rev, t_dat, t_sup, t_dia, t_ind, t_pro, t_age, t_not = tabs[:8]
 
 # ---------------- 2. Datos editables ----------------
 with t_dat:
@@ -170,7 +186,7 @@ with t_rev:
         st.error("Hay validaciones por revisar: contrasta con el PDF antes de continuar.")
     if hechos:
         st.subheader("Hechos identificados en las notas")
-        st.dataframe(pd.DataFrame([{"Hecho": k, "Valor": v["valor"], "Fuente": v["nota"]} for k, v in hechos.items()]),
+        st.dataframe(pd.DataFrame([{"Hecho": k, "Valor": str(v["valor"]), "Fuente": v["nota"]} for k, v in hechos.items()]),
                      width="stretch", hide_index=True)
 
 # ---------------- 4. Diagnóstico ----------------
@@ -293,6 +309,12 @@ with t_not:
                      width="stretch", hide_index=True)
     else:
         st.success("Todas las líneas con cifras fueron mapeadas.")
+
+# ---------------- 9. Historial ----------------
+if CUENTAS:
+    with tabs[8]:
+        pestana_historial(db, usuario, empresa_id, lambda: empaquetar(res, notas, hechos, adic, sector, salida_ed, st.session_state.get("nombre", "Cliente")),
+                          st.session_state.get("nombre", "Diagnóstico"), sector)
 
 # ---------------- Descarga ----------------
 st.divider()

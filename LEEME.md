@@ -34,7 +34,10 @@ el intérprete a `${workspaceFolder}/.venv/bin/python`.
 Debe mostrar 8 validaciones OK y crear `salidas/prueba.xlsx`.
 
 ## Variables opcionales (copia `.env.example` a `.env`)
-- `VALORIX_PASSWORD`   acceso con contraseña a la app
+- `VALORIX_PASSWORD`   acceso con contraseña única (solo cuando VALORIX_CUENTAS=0)
+- `VALORIX_CUENTAS`    1 (por defecto) = cuentas de usuario, empresas y diagnósticos guardados; 0 = modo local sin cuentas
+- `VALORIX_CODIGO_INVITACION`  si se define, el registro exige ese código
+- `VALORIX_DB`         ruta del archivo SQLite (por defecto `data/valorix.db`; en hosting con disco efímero usa un volumen persistente)
 - `ANTHROPIC_API_KEY`  habilita los agentes con IA (sin clave, responden con reglas)
 - `VALORIX_MODELO`     modelo de los agentes
 
