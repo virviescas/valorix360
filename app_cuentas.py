@@ -1,13 +1,15 @@
 """VALORIX360 · Interfaz de cuentas: acceso, empresas, historial y comparación de diagnósticos guardados."""
 import hmac
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from valorix_db import ErrorCuenta
+from valorix_correo import configurado as correo_configurado, enviar_restablecimiento
+from valorix_db import VIGENCIA_TOKEN_MIN, ErrorCuenta
 from valorix_motor import ADIC_SPEC, calcular, fmt_valor
 
 AGENTES = ("contable", "financiero", "cumplimiento")
@@ -20,15 +22,53 @@ def _fecha(iso):
     return datetime.fromisoformat(iso).astimezone().strftime("%d/%m/%Y %H:%M")
 
 
+def _encabezado(titulo, texto):
+    st.markdown("<div class='vx-hero'><div class='vx-logo'>" + LOGO_SVG + "VALORIX <span>360</span></div>"
+                f"<div class='vx-eyebrow'>Acceso</div><h1>{titulo}</h1><p>{texto}</p></div>", unsafe_allow_html=True)
+
+
+def _pantalla_restablecer(db, token):
+    _encabezado("Crea una nueva contraseña", "Elige una contraseña nueva para tu cuenta. El enlace funciona una sola vez.")
+    with st.form("restablecer"):
+        nueva = st.text_input("Nueva contraseña (mínimo 10 caracteres)", type="password")
+        repite = st.text_input("Repite la contraseña", type="password")
+        if st.form_submit_button("Cambiar contraseña", type="primary"):
+            try:
+                if nueva != repite:
+                    raise ErrorCuenta("Las contraseñas no coinciden.")
+                db.restablecer(token, nueva)
+                st.query_params.clear()
+                st.session_state["_clave_cambiada"] = True
+                st.rerun()
+            except ErrorCuenta as e:
+                st.error(str(e))
+    if st.button("Volver a ingresar"):
+        st.query_params.clear()
+        st.rerun()
+    st.stop()
+
+
+def _solicitar_enlace(db, correo):
+    """Respuesta idéntica exista o no el correo; el envío va en segundo plano para no filtrarlo por tiempo."""
+    def tarea():
+        r = db.solicitar_restablecimiento(correo)
+        if r:
+            enviar_restablecimiento(correo.strip().lower(), r[1], r[0], VIGENCIA_TOKEN_MIN)
+    threading.Thread(target=tarea, daemon=True).start()
+
+
 # ---------------- Acceso ----------------
 def acceso(db):
     """Devuelve el usuario autenticado; si no hay sesión muestra ingreso o registro y detiene el script."""
+    token = st.query_params.get("restablecer")
+    if token:
+        _pantalla_restablecer(db, token)
     if st.session_state.get("usuario"):
         return st.session_state["usuario"]
-    st.markdown("<div class='vx-hero'><div class='vx-logo'>" + LOGO_SVG + "VALORIX <span>360</span></div>"
-                "<div class='vx-eyebrow'>Acceso</div><h1>Ingresa a tu cuenta</h1>"
-                "<p>Guarda tus diagnósticos, organiza varias empresas y compara su evolución.</p></div>", unsafe_allow_html=True)
-    t_in, t_reg = st.tabs(["Ingresar", "Crear cuenta"])
+    _encabezado("Ingresa a tu cuenta", "Guarda tus diagnósticos, organiza varias empresas y compara su evolución.")
+    if st.session_state.pop("_clave_cambiada", False):
+        st.success("Contraseña actualizada. Ya puedes ingresar.")
+    t_in, t_reg, t_olv = st.tabs(["Ingresar", "Crear cuenta", "Olvidé mi contraseña"])
     with t_in, st.form("ingreso"):
         correo = st.text_input("Correo")
         clave = st.text_input("Contraseña", type="password")
@@ -53,6 +93,15 @@ def acceso(db):
                 st.success("Cuenta creada. Ya puedes ingresar desde la pestaña «Ingresar».")
             except ErrorCuenta as e:
                 st.error(str(e))
+    with t_olv, st.form("olvide"):
+        st.caption("Escribe tu correo y te enviaremos un enlace para crear una contraseña nueva.")
+        correo_o = st.text_input("Correo", key="correo_olvido")
+        if st.form_submit_button("Enviar enlace", type="primary"):
+            if not correo_configurado():
+                st.error("El envío de correos no está configurado en este servidor. Contacta al administrador.")
+            else:
+                _solicitar_enlace(db, correo_o)
+                st.success("Si el correo está registrado, recibirás un enlace en unos minutos. Revisa también el spam.")
     st.stop()
 
 

@@ -41,6 +41,19 @@ Debe mostrar 8 validaciones OK y crear `salidas/prueba.xlsx`.
 - `DATABASE_URL`       URL de PostgreSQL (por ejemplo `postgresql://usuario:clave@host:5432/base?sslmode=require`); si existe, reemplaza a SQLite y las cuentas sobreviven a reinicios y despliegues. Guárdala como secreto del hosting, nunca en el código.
 - `ANTHROPIC_API_KEY`  habilita los agentes con IA (sin clave, responden con reglas)
 - `VALORIX_MODELO`     modelo de los agentes
+- `VALORIX_URL_APP`    URL pública de la app (se usa en el enlace del correo de recuperación)
+- `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`  correo saliente para recuperar contraseñas. Con Outlook/Hotmail usa `smtp-mail.outlook.com` y una contraseña de aplicación. Sin SMTP, la app avisa que el envío no está configurado.
+- `VALORIX_CORREO_CONSOLA`  1 = solo para desarrollo: imprime el enlace de recuperación en el registro del servidor
+
+## Ver la app desde el celular o la tablet (misma red Wi-Fi)
+- App: `http://<IP-del-equipo>:8501` (Streamlit la muestra como "Network URL").
+- Landing: dentro de `web/`, `python -m http.server 8080 --bind 0.0.0.0` y abre `http://<IP-del-equipo>:8080`.
+- Si Windows pregunta por el firewall, permite el acceso en redes privadas. Ambas páginas se adaptan a celular, tablet y laptop.
+
+## Publicación
+1. **App (Streamlit Community Cloud)**: sube el repositorio a GitHub (privado), crea la app en share.streamlit.io con `app_valorix.py`. `packages.txt` instala Tesseract. En *Secrets* define `DATABASE_URL` (PostgreSQL), `VALORIX_URL_APP`, `SMTP_*` y, si aplica, `ANTHROPIC_API_KEY` y `VALORIX_CODIGO_INVITACION`.
+2. **Landing (Netlify o Cloudflare Pages)**: publica la carpeta `web/` (`_headers` añade cabeceras de seguridad). Luego escribe la URL de la app en `URL_APP_PUBLICA` de `web/app.js`; mientras esté vacía, en producción los botones llevan al formulario.
+3. Activa el formulario de contacto: el primer envío pide confirmar el correo de destino (FormSubmit).
 
 ## OCR (solo PDF escaneados)
 Instala Tesseract con idioma español: en Windows, el instalador de UB-Mannheim y el paquete "spa".

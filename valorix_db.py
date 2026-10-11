@@ -23,6 +23,8 @@ MAX_FALLOS = 5
 BLOQUEO_MIN = 15
 MIN_CLAVE = 10
 MAX_JSON = 2_000_000
+VIGENCIA_TOKEN_MIN = 30
+MAX_SOLICITUDES_HORA = 3
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s]{2,}$")
 
 metadata = MetaData()
@@ -42,6 +44,13 @@ diagnosticos = Table(
     Column("empresa_id", Integer, ForeignKey("empresas.id", ondelete="CASCADE"), nullable=False),
     Column("nombre", Text, nullable=False), Column("sector", Text, nullable=False), Column("creado", Text, nullable=False),
     Column("datos", Text, nullable=False), Index("ix_diag_empresa", "usuario_id", "empresa_id", "creado"))
+
+
+restablecimientos = Table(
+    "restablecimientos", metadata,
+    Column("id", Integer, primary_key=True), Column("usuario_id", Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False),
+    Column("token_hash", Text, nullable=False, unique=True), Column("expira", Text, nullable=False),
+    Column("usado", Integer, nullable=False, server_default="0"), Column("creado", Text, nullable=False))
 
 
 class ErrorCuenta(ValueError):
@@ -129,9 +138,44 @@ class Almacen:
             con.execute(update(usuarios).where(usuarios.c.id == u["id"]).values(fallos=0 if bloqueo else fallos, bloqueado_hasta=bloqueo))
             return None
 
+    # ---------------- recuperación de contraseña ----------------
+    @staticmethod
+    def _huella(token):
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    def solicitar_restablecimiento(self, correo):
+        """Devuelve (token, nombre) si el correo existe y no superó el límite; si no, None. El token solo se guarda como huella."""
+        correo = (correo or "").strip().lower()
+        with self.engine.begin() as con:
+            u = con.execute(select(usuarios.c.id, usuarios.c.nombre).where(usuarios.c.correo == correo)).mappings().first()
+            if u is None:
+                return None
+            hace_hora = (_ahora() - timedelta(hours=1)).isoformat()
+            recientes = con.execute(select(restablecimientos.c.id).where(restablecimientos.c.usuario_id == u["id"],
+                                                                          restablecimientos.c.creado > hace_hora)).all()
+            if len(recientes) >= MAX_SOLICITUDES_HORA:
+                return None
+            token = secrets.token_urlsafe(32)
+            con.execute(insert(restablecimientos).values(
+                usuario_id=u["id"], token_hash=self._huella(token), creado=_ahora().isoformat(),
+                expira=(_ahora() + timedelta(minutes=VIGENCIA_TOKEN_MIN)).isoformat()))
+            return token, u["nombre"]
+
+    def restablecer(self, token, nueva_clave):
+        """Cambia la contraseña con un token vigente y sin usar; el token solo sirve una vez."""
+        if len(nueva_clave or "") < MIN_CLAVE:
+            raise ErrorCuenta(f"La contraseña debe tener al menos {MIN_CLAVE} caracteres.")
+        with self.engine.begin() as con:
+            r = con.execute(select(restablecimientos).where(restablecimientos.c.token_hash == self._huella(token or ""))).mappings().first()
+            if r is None or r["usado"] or datetime.fromisoformat(r["expira"]) < _ahora():
+                raise ErrorCuenta("El enlace no es válido o ya venció. Solicita uno nuevo.")
+            con.execute(update(usuarios).where(usuarios.c.id == r["usuario_id"]).values(clave=_hash(nueva_clave), fallos=0, bloqueado_hasta=None))
+            con.execute(update(restablecimientos).where(restablecimientos.c.usuario_id == r["usuario_id"]).values(usado=1))
+
     def eliminar_usuario(self, uid):
         """Borra la cuenta y todos sus datos (derecho de supresión)."""
         with self.engine.begin() as con:
+            con.execute(delete(restablecimientos).where(restablecimientos.c.usuario_id == uid))
             con.execute(delete(diagnosticos).where(diagnosticos.c.usuario_id == uid))
             con.execute(delete(empresas).where(empresas.c.usuario_id == uid))
             con.execute(delete(usuarios).where(usuarios.c.id == uid))

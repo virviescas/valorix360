@@ -1,5 +1,21 @@
 const ENDPOINT = 'https://formsubmit.co/ajax/virviescas_2318@hotmail.com';
 
+// URL pública de la app de Streamlit. Vacía: en producción los botones llevan al formulario de contacto.
+const URL_APP_PUBLICA = '';
+const PUERTO_APP_LOCAL = 8501;
+
+function urlApp() {
+  const h = location.hostname;
+  if (location.protocol === 'file:') return `http://localhost:${PUERTO_APP_LOCAL}`;
+  const red_local = h === 'localhost' || h.endsWith('.local') || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
+  return red_local ? `${location.protocol}//${h}:${PUERTO_APP_LOCAL}` : URL_APP_PUBLICA;
+}
+
+document.querySelectorAll('a[data-app]').forEach((a) => {
+  const u = urlApp();
+  if (u) { a.href = u; a.target = '_blank'; a.rel = 'noopener'; }
+});
+
 const form = document.getElementById('f');
 const msg = document.getElementById('msg');
 const boton = form.querySelector('button[type=submit]');
