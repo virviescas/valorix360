@@ -5,6 +5,10 @@
 - `valorix_extractor.py`  Lee el PDF (con OCR opcional), mapea cuentas, valida y llena la plantilla Excel
 - `valorix_motor.py`      Cálculo determinista: indicadores, valor y riesgo, estrés, hallazgos, plan, proyección
 - `valorix_agentes.py`    Agentes (contable, financiero, cumplimiento y riesgos) con verificación de cifras
+- `valorix_tabular.py`    Carga de datos desde Excel o CSV (alternativa al PDF) y plantilla de datos
+- `valorix_informe.py`    Informe de diagnóstico en PDF
+- `tests/`                Pruebas automáticas (`pip install -r requirements-dev.txt` y luego `pytest tests`)
+- `web/`                  Landing page estática (index.html + styles.css + app.js; valorix360.html es la versión de un solo archivo)
 - `probar.py`             Prueba de punta a punta sin interfaz
 - `valorix360_plantilla_diagnostico.xlsx`  Plantilla con fórmulas
 - `.streamlit/config.toml` Tema violeta de la app

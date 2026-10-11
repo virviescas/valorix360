@@ -96,6 +96,46 @@ def test_proyeccion_caja_final_es_ultimo_mes(caso):
     assert p["caja_min"] == min(p["caja"])
 
 
+# ---------- Carga desde Excel/CSV ----------
+def _csv_desde(salida, factor_inverso=1.0):
+    filas = ["Clave;Actual;Anterior"]
+    for k, (a, p) in salida.items():
+        esc = 1.0 if k == "dias" else factor_inverso
+        fmt = lambda v: "" if v is None else str(v * esc).replace(".", ",")  # noqa: E731
+        filas.append(f"{k};{fmt(a)};{fmt(p)}")
+    return "\n".join(filas).encode("utf-8")
+
+
+def test_csv_reproduce_el_diagnostico_del_pdf(caso):
+    from valorix_tabular import cargar_tabular
+    salida = caso["res"]["salida"]
+    r = cargar_tabular(_csv_desde(salida), "datos.csv")
+    a, b = calcular(salida, caso["adic"])["m"], calcular(r["salida"], caso["adic"])["m"]
+    for k in ("razon_corriente", "dias_inv", "margen_ebitda", "ciclo_caja"):
+        assert b[k]["actual"] == pytest.approx(a[k]["actual"])
+    assert all(v[3] == "OK" for v in r["validaciones"])
+
+
+def test_csv_en_miles_se_convierte_a_millones(caso):
+    from valorix_tabular import cargar_tabular
+    salida = caso["res"]["salida"]
+    r = cargar_tabular(_csv_desde(salida, 1000.0), "datos.csv", factor=1e-3)
+    assert r["salida"]["ingresos"][0] == pytest.approx(salida["ingresos"][0])
+    assert r["salida"]["dias"][0] == salida["dias"][0]
+
+
+def test_plantilla_xlsx_vacia_pide_datos_obligatorios():
+    from valorix_tabular import ErrorCarga, cargar_tabular, plantilla_xlsx
+    with pytest.raises(ErrorCarga, match="obligatorios"):
+        cargar_tabular(plantilla_xlsx(), "plantilla.xlsx")
+
+
+def test_archivo_sin_columnas_esperadas_da_error_claro():
+    from valorix_tabular import ErrorCarga, cargar_tabular
+    with pytest.raises(ErrorCarga, match="Faltan columnas"):
+        cargar_tabular(b"a;b\n1;2", "x.csv")
+
+
 # ---------- Sectores ----------
 def test_sector_cambia_las_referencias(caso):
     salida = caso["res"]["salida"]

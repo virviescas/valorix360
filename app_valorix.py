@@ -22,18 +22,8 @@ from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar
 from valorix_informe import generar_informe_pdf
 from valorix_motor import (ADIC_SPEC, ESCENARIOS, SECTORES, calcular, extraer_hechos, fmt_valor, generar_hallazgos, mm, n,
                            proyectar)
+from valorix_tabular import ETIQUETAS, ErrorCarga, cargar_tabular, plantilla_xlsx
 
-ETIQUETAS = {
-    "efectivo": "Efectivo y equivalentes", "cxc": "Cuentas por cobrar (clientes)", "inventarios": "Inventarios",
-    "otros_ac": "Otros activos corrientes", "anc": "Activos no corrientes",
-    "oblig_cp": "Obligaciones financieras de corto plazo", "proveedores": "Proveedores",
-    "otros_pc": "Otros pasivos corrientes", "pnc": "Pasivo no corriente", "patrimonio": "Patrimonio",
-    "ingresos": "Ingresos por ventas", "costo": "Costo de ventas",
-    "gastos_op": "Gastos operativos (sin depreciación)", "da": "Depreciación y amortización",
-    "gastos_fin": "Gastos financieros", "impuestos": "Impuestos", "cfo": "Flujo de caja operativo",
-    "capex": "Inversión en activos fijos (Capex)", "servicio_deuda": "Servicio de la deuda",
-    "dias": "Días del periodo", "deuda_lp": "Deuda financiera de largo plazo", "capital": "Capital social y primas",
-}
 ICONO = {"ok": "✅", "atencion": "⚠️", "riesgo": "🔴"}
 ESTADO = {"Bien": "✅ Bien", "Revisar": "⚠️ Revisar", "n/d": "—"}
 AGENTES = ("contable", "financiero", "cumplimiento")
@@ -73,29 +63,45 @@ with st.sidebar:
     if usar_ia and not os.environ.get("ANTHROPIC_API_KEY"):
         st.info("No hay ANTHROPIC_API_KEY: los agentes responderán con reglas.")
 
-pdf = st.file_uploader("Estados financieros en PDF (con notas)", type=["pdf"])
+pdf = st.file_uploader("Estados financieros: PDF (con notas), Excel o CSV", type=["pdf", "xlsx", "csv"])
+st.download_button("Descargar plantilla de datos (Excel) para cargar sin PDF", plantilla_xlsx(), file_name="valorix360_datos.xlsx",
+                   mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 FACTORES = {"pesos": 1e-6, "miles": 1e-3, "millones": 1.0}
 
-if pdf and st.button("Procesar PDF", type="primary"):
-    with st.spinner("Leyendo y organizando el PDF..."):
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+if pdf and st.button("Procesar archivo", type="primary"):
+    factor = FACTORES.get(unidad)
+    if not pdf.name.lower().endswith(".pdf"):
         try:
-            tmp.write(pdf.getbuffer())
-            tmp.close()
-            res = extraer(tmp.name)
-        finally:
-            os.unlink(tmp.name)
-        factor = FACTORES.get(unidad)
-        consolidar(res, factor, dias_act or None, dias_ant or None, da_en_gastos=da_incluida)
-        notas = segmentar_notas(res["notas_lineas"])
-        st.session_state.update(res=res, notas=notas, nombre=Path(pdf.name).stem, chat={a: [] for a in AGENTES},
-                                hechos=extraer_hechos(notas, factor if factor is not None else (res["factor"] or 1.0)))
+            res = cargar_tabular(pdf.getvalue(), pdf.name, 1.0 if factor is None else factor)
+        except ErrorCarga as e:
+            st.error(str(e))
+            st.stop()
+        if dias_act:
+            res["salida"]["dias"] = [dias_act, dias_ant or dias_act]
+        if factor is None:
+            res["avisos"].append("Unidad en Auto: se asumió que las cifras del archivo están en millones de COP.")
+        st.session_state.update(res=res, notas=[], nombre=Path(pdf.name).stem, chat={a: [] for a in AGENTES}, hechos={})
         st.session_state.pop("xlsx", None)
         st.session_state.pop("pdf", None)
+    else:
+        with st.spinner("Leyendo y organizando el PDF..."):
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            try:
+                tmp.write(pdf.getbuffer())
+                tmp.close()
+                res = extraer(tmp.name)
+            finally:
+                os.unlink(tmp.name)
+            consolidar(res, factor, dias_act or None, dias_ant or None, da_en_gastos=da_incluida)
+            notas = segmentar_notas(res["notas_lineas"])
+            st.session_state.update(res=res, notas=notas, nombre=Path(pdf.name).stem, chat={a: [] for a in AGENTES},
+                                    hechos=extraer_hechos(notas, factor if factor is not None else (res["factor"] or 1.0)))
+            st.session_state.pop("xlsx", None)
+            st.session_state.pop("pdf", None)
 
 res = st.session_state.get("res")
 if res is None:
-    st.info("Sube un PDF y pulsa **Procesar PDF**.")
+    st.info("Sube un PDF, Excel o CSV y pulsa **Procesar archivo**.")
     st.stop()
 notas, hechos = st.session_state["notas"], st.session_state["hechos"]
 
