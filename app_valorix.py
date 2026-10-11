@@ -30,6 +30,7 @@ AGENTES = ("contable", "financiero", "cumplimiento")
 PLANTILLA_DEFECTO = Path(__file__).with_name("valorix360_plantilla_diagnostico.xlsx")
 
 st.set_page_config(page_title="Valorix360 · Diagnóstico financiero", page_icon="📈", layout="wide")
+st.markdown(f"<style>{Path(__file__).with_name('estilos.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 # ---------------- Acceso opcional ----------------
 clave = os.environ.get("VALORIX_PASSWORD")
@@ -43,14 +44,19 @@ if clave and st.session_state.get("ok") is not True:
         st.error("Contraseña incorrecta")
     st.stop()
 
-st.title("📈 Valorix360 · Diagnóstico financiero desde PDF")
+st.markdown(
+    "<div class='vx-hero'><div class='vx-logo'>VALORIX <span>360</span></div>"
+    "<div class='vx-eyebrow'>Diagnóstico financiero</div>"
+    "<h1>De tus estados financieros a un plan de acción</h1>"
+    "<p>Sube tu PDF, Excel o CSV: validamos las cifras, calculamos indicadores, riesgos y proyección de caja, "
+    "y te entregamos un informe listo para decidir.</p></div>", unsafe_allow_html=True)
 st.caption("Los archivos se procesan en archivos temporales que se eliminan al terminar. Los estados financieros son "
            "confidenciales: úsalo solo en equipos y redes autorizados.")
 
 # ---------------- Barra lateral ----------------
 with st.sidebar:
     st.header("Opciones")
-    unidad = st.selectbox("Unidad del PDF", ["Auto", "pesos", "miles", "millones"])
+    unidad = st.selectbox("Unidad de las cifras", ["Auto", "pesos", "miles", "millones"])
     dias_act = st.number_input("Días del periodo actual (0 = automático)", 0, 366, 0)
     dias_ant = st.number_input("Días del periodo anterior (0 = igual al actual)", 0, 366, 0)
     da_incluida = st.checkbox("La depreciación está dentro de los gastos operativos", value=True)

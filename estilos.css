@@ -1,0 +1,46 @@
+:root { --bg:#0a0a0f; --panel:#14141c; --line:#26262f; --lime:#c6f432; --mut:#9a9aa8; --ink:#0a0a0f; }
+
+.stApp { background:var(--bg); }
+header[data-testid="stHeader"] { background:transparent; }
+.block-container { padding-top:2.2rem; max-width:1200px; }
+
+/* Barra lateral */
+section[data-testid="stSidebar"] { background:#0d0d14; border-right:1px solid var(--line); }
+section[data-testid="stSidebar"] h2 { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--lime); }
+
+/* Encabezado de la app */
+.vx-hero { border:1px solid var(--line); border-radius:16px; padding:28px 32px; margin-bottom:22px;
+  background:radial-gradient(900px 220px at 100% 0%, rgba(198,244,50,.10), transparent 60%), var(--panel); }
+.vx-eyebrow { color:var(--lime); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+.vx-hero h1 { font-size:34px; line-height:1.15; letter-spacing:-.02em; margin:8px 0 10px; padding:0; }
+.vx-hero p { color:var(--mut); font-size:14px; max-width:720px; margin:0; }
+.vx-logo { font-weight:800; letter-spacing:.12em; font-size:13px; margin-bottom:14px; }
+.vx-logo span { color:var(--lime); }
+
+/* Botones */
+button[data-testid="stBaseButton-primary"] { background:var(--lime); color:var(--ink); border:0; font-weight:700; border-radius:8px; }
+button[data-testid="stBaseButton-primary"]:hover { background:var(--lime); filter:brightness(1.08); color:var(--ink); }
+button[data-testid="stBaseButton-primary"] p { color:var(--ink); }
+button[data-testid="stBaseButton-secondary"] { background:var(--panel); border:1px solid var(--line); border-radius:8px; color:#fff; }
+button[data-testid="stBaseButton-secondary"]:hover { border-color:var(--lime); color:var(--lime); }
+
+/* Carga de archivos */
+[data-testid="stFileUploaderDropzone"] { background:var(--panel); border:1px dashed #3a3a46; border-radius:12px; }
+[data-testid="stFileUploaderDropzone"]:hover { border-color:var(--lime); }
+
+/* Pestañas */
+button[data-baseweb="tab"] { color:var(--mut); font-weight:600; }
+button[data-baseweb="tab"][aria-selected="true"] { color:var(--lime); }
+[data-baseweb="tab-highlight"] { background-color:var(--lime); }
+[data-baseweb="tab-border"] { background-color:var(--line); }
+
+/* Tarjetas, tablas y mensajes */
+[data-testid="stMetric"] { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+[data-testid="stMetricValue"] { color:var(--lime); }
+[data-testid="stExpander"] { border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+[data-testid="stDataFrame"] { border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+[data-testid="stAlert"] { border-radius:12px; border:1px solid var(--line); border-left:3px solid var(--lime); background:var(--panel); }
+[data-testid="stAlert"] p, [data-testid="stAlert"] a { color:#e6e6ee; }
+[data-testid="stChatMessage"] { background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+h2, h3 { letter-spacing:-.01em; }
+hr { border-color:var(--line); }
