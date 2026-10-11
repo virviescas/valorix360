@@ -2,6 +2,7 @@
 import hmac
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -10,6 +11,7 @@ from valorix_db import ErrorCuenta
 from valorix_motor import ADIC_SPEC, calcular, fmt_valor
 
 AGENTES = ("contable", "financiero", "cumplimiento")
+LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(encoding="utf-8").strip().replace("<svg ", "<svg width='26' height='26' ", 1)
 CONSENTIMIENTO = ("Autorizo a Valorix360 el tratamiento de mis datos personales y de la información financiera que cargue, "
                   "para prestar el servicio, conforme a la Ley 1581 de 2012. Puedo eliminar mi cuenta y mis datos cuando quiera.")
 
@@ -23,7 +25,7 @@ def acceso(db):
     """Devuelve el usuario autenticado; si no hay sesión muestra ingreso o registro y detiene el script."""
     if st.session_state.get("usuario"):
         return st.session_state["usuario"]
-    st.markdown("<div class='vx-hero'><div class='vx-logo'>VALORIX <span>360</span></div>"
+    st.markdown("<div class='vx-hero'><div class='vx-logo'>" + LOGO_SVG + "VALORIX <span>360</span></div>"
                 "<div class='vx-eyebrow'>Acceso</div><h1>Ingresa a tu cuenta</h1>"
                 "<p>Guarda tus diagnósticos, organiza varias empresas y compara su evolución.</p></div>", unsafe_allow_html=True)
     t_in, t_reg = st.tabs(["Ingresar", "Crear cuenta"])

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from PIL import Image
 
 from app_cuentas import acceso, barra_cuenta, empaquetar, pestana_historial
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
@@ -30,8 +31,10 @@ ICONO = {"ok": "✅", "atencion": "⚠️", "riesgo": "🔴"}
 ESTADO = {"Bien": "✅ Bien", "Revisar": "⚠️ Revisar", "n/d": "—"}
 AGENTES = ("contable", "financiero", "cumplimiento")
 PLANTILLA_DEFECTO = Path(__file__).with_name("valorix360_plantilla_diagnostico.xlsx")
+LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(encoding="utf-8").strip().replace("<svg ", "<svg width='26' height='26' ", 1)
 
-st.set_page_config(page_title="Valorix360 · Diagnóstico financiero", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Valorix360 · Diagnóstico financiero", page_icon=Image.open(Path(__file__).with_name("assets") / "logo.png"),
+                   layout="wide")
 st.markdown(f"<style>{Path(__file__).with_name('estilos.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 # ---------------- Acceso ----------------
@@ -58,7 +61,7 @@ if not CUENTAS and clave and st.session_state.get("ok") is not True:
     st.stop()
 
 st.markdown(
-    "<div class='vx-hero'><div class='vx-logo'>VALORIX <span>360</span></div>"
+    "<div class='vx-hero'><div class='vx-logo'>" + LOGO_SVG + "VALORIX <span>360</span></div>"
     "<div class='vx-eyebrow'>Diagnóstico financiero</div>"
     "<h1>De tus estados financieros a un plan de acción</h1>"
     "<p>Sube tu PDF, Excel o CSV: validamos las cifras, calculamos indicadores, riesgos y proyección de caja, "
