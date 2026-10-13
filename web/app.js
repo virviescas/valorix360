@@ -1,7 +1,7 @@
 const ENDPOINT = 'https://formsubmit.co/ajax/virviescas_2318@hotmail.com';
 
-// URL pública de la app de Streamlit. Vacía: en producción los botones llevan al formulario de contacto.
-const URL_APP_PUBLICA = '';
+// URL pública de la app Streamlit; en producción los botones la abren en una pestaña nueva.
+const URL_APP_PUBLICA = 'https://valorix360.streamlit.app';
 const PUERTO_APP_LOCAL = 8501;
 
 function urlApp() {
