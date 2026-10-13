@@ -1,6 +1,5 @@
 """VALORIX360 · Interfaz de cuentas: acceso, empresas, historial y comparación de diagnósticos guardados."""
 import hmac
-import os
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -9,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from valorix_correo import configurado as correo_configurado, enviar_restablecimiento
+from valorix_config import config_value
 from valorix_db import VIGENCIA_TOKEN_MIN, ErrorCuenta
 from valorix_motor import ADIC_SPEC, calcular, fmt_valor
 
@@ -82,7 +82,7 @@ def acceso(db):
         nombre = st.text_input("Nombre")
         correo_r = st.text_input("Correo", key="correo_registro")
         clave_r = st.text_input("Contraseña (mínimo 10 caracteres)", type="password", key="clave_registro")
-        codigo_req = os.environ.get("VALORIX_CODIGO_INVITACION")
+        codigo_req = config_value("VALORIX_CODIGO_INVITACION")
         codigo = st.text_input("Código de invitación", type="password") if codigo_req else None
         acepto = st.checkbox(CONSENTIMIENTO)
         if st.form_submit_button("Crear cuenta", type="primary"):

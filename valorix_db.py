@@ -8,7 +8,6 @@ import base64
 import hashlib
 import hmac
 import json
-import os
 import re
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -18,7 +17,9 @@ from sqlalchemy import (Column, ForeignKey, Index, Integer, MetaData, Table, Tex
                         insert, select, update)
 from sqlalchemy.exc import IntegrityError
 
-RUTA_DEFECTO = Path(os.environ.get("VALORIX_DB") or Path(__file__).with_name("data") / "valorix.db")
+from valorix_config import config_value
+
+RUTA_DEFECTO = Path(config_value("VALORIX_DB") or Path(__file__).with_name("data") / "valorix.db")
 MAX_FALLOS = 5
 BLOQUEO_MIN = 15
 MIN_CLAVE = 10
@@ -82,7 +83,7 @@ _HASH_FALSO = _hash("clave-inexistente")  # iguala el tiempo de respuesta cuando
 
 def url_base(ruta=None, url=None):
     """URL SQLAlchemy: DATABASE_URL (PostgreSQL) si existe; si no, un archivo SQLite."""
-    url = url or os.environ.get("DATABASE_URL")
+    url = url or config_value("DATABASE_URL")
     if not url:
         ruta = Path(ruta or RUTA_DEFECTO)
         ruta.parent.mkdir(parents=True, exist_ok=True)

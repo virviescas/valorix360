@@ -14,9 +14,9 @@ interpretarlo. Guardarraíles:
 Variables de entorno: ANTHROPIC_API_KEY (clave) y VALORIX_MODELO (por defecto claude-sonnet-5-5).
 """
 import json
-import os
 import re
 
+from valorix_config import config_value
 from valorix_motor import mm, n
 
 NOMBRES_AGENTES = {"contable": "Agente contable", "financiero": "Agente financiero",
@@ -172,9 +172,9 @@ def consultar_agente(agente, pregunta, ctx, historial=None, usar_ia=True, modelo
     advertencias = []
     modo = "reglas"
     texto, fuentes = None, []
-    if usar_ia and os.environ.get("ANTHROPIC_API_KEY"):
+    if usar_ia and config_value("ANTHROPIC_API_KEY"):
         try:
-            modelo = modelo or os.environ.get("VALORIX_MODELO", "claude-sonnet-5-5")
+            modelo = modelo or config_value("VALORIX_MODELO", "claude-sonnet-5-5")
             system = COMUN + "\n\n" + PERSONAS[agente]
             contexto_txt = json.dumps(ctx, ensure_ascii=False, separators=(",", ":"))
             mensajes = []

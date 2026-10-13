@@ -23,6 +23,7 @@ load_dotenv(Path(__file__).with_name(".env"))  # no pisa variables ya definidas 
 
 from app_cuentas import acceso, barra_cuenta, empaquetar, pestana_historial  # noqa: E402
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
+from valorix_config import config_value
 from valorix_db import Almacen
 from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar_notas
 from valorix_informe import generar_informe_pdf
@@ -42,7 +43,7 @@ st.markdown(f"<style>{Path(__file__).with_name('estilos.css').read_text(encoding
 
 # ---------------- Acceso ----------------
 # VALORIX_CUENTAS=0 desactiva cuentas y guardado (modo local de un solo usuario).
-CUENTAS = os.environ.get("VALORIX_CUENTAS", "1") != "0"
+CUENTAS = config_value("VALORIX_CUENTAS", "1") != "0"
 
 
 @st.cache_resource
@@ -52,7 +53,7 @@ def almacen():
 
 db = almacen() if CUENTAS else None
 usuario = acceso(db) if CUENTAS else None
-clave = os.environ.get("VALORIX_PASSWORD")
+clave = config_value("VALORIX_PASSWORD")
 if not CUENTAS and clave and st.session_state.get("ok") is not True:
     st.title("Valorix360")
     ingreso = st.text_input("Contraseña", type="password")
@@ -86,7 +87,7 @@ with st.sidebar:
     st.divider()
     usar_ia = st.checkbox("Agentes con IA", value=False,
                           help="Envía el diagnóstico (cifras y notas) a la API de Anthropic. Actívalo solo si el cliente lo autoriza.")
-    if usar_ia and not os.environ.get("ANTHROPIC_API_KEY"):
+    if usar_ia and not config_value("ANTHROPIC_API_KEY"):
         st.info("No hay ANTHROPIC_API_KEY: los agentes responderán con reglas.")
 
 pdf = st.file_uploader("Estados financieros: PDF (con notas), Excel o CSV", type=["pdf", "xlsx", "csv"])
@@ -295,7 +296,7 @@ with t_age:
         resp = consultar_agente(ag, pregunta, ctx, [(q, r) for q, r, _ in historial], usar_ia=usar_ia)
         historial.append((pregunta, resp["texto"], resp))
         st.rerun()
-    st.caption(f"Modo: {'IA' if usar_ia and os.environ.get('ANTHROPIC_API_KEY') else 'reglas'} · {AVISO}")
+    st.caption(f"Modo: {'IA' if usar_ia and config_value('ANTHROPIC_API_KEY') else 'reglas'} · {AVISO}")
 
 # ---------------- 8. Notas y sin mapear ----------------
 with t_not:
