@@ -83,6 +83,19 @@ def test_guardar_y_cargar_diagnostico(db):
     assert [d["nombre"] for d in db.listar(uid, eid)] == ["Corte junio"]
 
 
+def test_perfil_crediticio_interno_se_guarda_separado(db):
+    uid = _usuario(db)
+    eid = db.crear_empresa(uid, "Mi Pyme")
+    interno = {"visible_cliente": False, "estado": "indicativo", "monto": 123.45}
+    datos = {"salida": {"ingresos": [100.5, 90.0]}, "perfil_credito_interno": interno}
+
+    did = db.guardar(uid, eid, "Perfil", "General", datos)
+
+    cargado = db.cargar(uid, did)
+    assert cargado["datos"]["perfil_credito_interno"] == interno
+    assert cargado["datos"]["perfil_credito_interno"]["visible_cliente"] is False
+
+
 def test_un_usuario_no_accede_a_datos_de_otro(db):
     a, b = _usuario(db), _usuario(db, "beto@empresa.com")
     ea = db.crear_empresa(a, "Empresa A")

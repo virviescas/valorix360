@@ -140,9 +140,10 @@ def barra_cuenta(db, usuario):
 
 
 # ---------------- Guardar y restaurar ----------------
-def empaquetar(res, notas, hechos, adic, sector, salida, nombre):
+def empaquetar(res, notas, hechos, adic, sector, salida, nombre, perfil_credito_interno=None):
     return dict(version=1, nombre=nombre, sector=sector, salida=salida, adic=adic, validaciones=res["validaciones"],
-                avisos=res["avisos"], meta=res["meta"], unidad=res["unidad"], years=res["years"], hechos=hechos, notas=notas)
+                avisos=res["avisos"], meta=res["meta"], unidad=res["unidad"], years=res["years"], hechos=hechos, notas=notas,
+                perfil_credito_interno=perfil_credito_interno)
 
 
 def _restaurar(db, usuario_id, did):
@@ -156,6 +157,7 @@ def _restaurar(db, usuario_id, did):
                validaciones=d["validaciones"])
     nombre = d["nombre"]
     st.session_state.update(res=res, notas=d["notas"], hechos=d["hechos"], nombre=nombre, chat={a: [] for a in AGENTES}, sector=g["sector"])
+    st.session_state["perfil_credito_interno"] = d.get("perfil_credito_interno")
     for k, _, _, tipo, _ in ADIC_SPEC:
         v = d["adic"].get(k)
         st.session_state[f"adic_{nombre}_{k}"] = None if v is None else (v * 100 if tipo == "pct" else v)

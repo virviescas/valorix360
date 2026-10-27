@@ -23,7 +23,8 @@ load_dotenv(Path(__file__).with_name(".env"))  # no pisa variables ya definidas 
 
 from app_cuentas import acceso, barra_cuenta, empaquetar, pestana_historial  # noqa: E402
 from valorix_agentes import AVISO, NOMBRES_AGENTES, consultar_agente, construir_contexto
-from valorix_config import config_value
+from valorix_config import ErrorConfiguracion, config_value, validar_configuracion_produccion
+from valorix_credito import ErrorVaciado, cargar_vaciado_credito, es_vaciado_credito, recomendar_credito
 from valorix_db import Almacen
 from valorix_extractor import consolidar, escribir_plantilla, extraer, segmentar_notas
 from valorix_informe import generar_informe_pdf
@@ -39,6 +40,11 @@ LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(enc
 
 st.set_page_config(page_title="Valorix360 · Diagnóstico financiero", page_icon=Image.open(Path(__file__).with_name("assets") / "logo.png"),
                    layout="wide")
+try:
+    validar_configuracion_produccion()
+except ErrorConfiguracion as e:
+    st.error(str(e))
+    st.stop()
 st.markdown(f"<style>{Path(__file__).with_name('estilos.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 # ---------------- Acceso ----------------
@@ -99,8 +105,12 @@ if pdf and st.button("Procesar archivo", type="primary"):
     factor = FACTORES.get(unidad)
     if not pdf.name.lower().endswith(".pdf"):
         try:
-            res = cargar_tabular(pdf.getvalue(), pdf.name, 1.0 if factor is None else factor)
-        except ErrorCarga as e:
+            contenido = pdf.getvalue()
+            if pdf.name.lower().endswith(".xlsx") and es_vaciado_credito(contenido):
+                res = cargar_vaciado_credito(contenido, pdf.name)
+            else:
+                res = cargar_tabular(contenido, pdf.name, 1.0 if factor is None else factor)
+        except (ErrorCarga, ErrorVaciado) as e:
             st.error(str(e))
             st.stop()
         if dias_act:
@@ -171,6 +181,8 @@ with t_sup:
 
 # ---------------- Cálculo ----------------
 calc = calcular(salida_ed, adic, sector)
+perfil_credito_interno = recomendar_credito(salida_ed, adic)
+st.session_state["perfil_credito_interno"] = perfil_credito_interno
 hall = generar_hallazgos(calc, hechos, res["validaciones"])
 ctx = construir_contexto(calc, hall, notas, hechos, salida_ed, res["validaciones"])
 
@@ -320,7 +332,9 @@ with t_not:
 # ---------------- 9. Historial ----------------
 if CUENTAS:
     with tabs[8]:
-        pestana_historial(db, usuario, empresa_id, lambda: empaquetar(res, notas, hechos, adic, sector, salida_ed, st.session_state.get("nombre", "Cliente")),
+        pestana_historial(db, usuario, empresa_id, lambda: empaquetar(
+                              res, notas, hechos, adic, sector, salida_ed, st.session_state.get("nombre", "Cliente"),
+                              perfil_credito_interno),
                           st.session_state.get("nombre", "Diagnóstico"), sector)
 
 # ---------------- Descarga ----------------

@@ -1,0 +1,5 @@
+# Development lockfile based on requirements-lock.txt.
+-r requirements-lock.txt
+pytest==9.1.1
+iniconfig==2.3.1
+pluggy==1.6.0
