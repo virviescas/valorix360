@@ -102,6 +102,10 @@ Después abre `http://localhost:8080`. Para publicarla rápidamente, sube solo l
 `web/` a Netlify Drop o Cloudflare Pages. Este flujo recibe solicitudes de diagnóstico;
 el procesamiento financiero permanece en la app interna hasta publicar un backend seguro.
 
+El flujo comercial actual no cobra automáticamente: primero se revisa la solicitud y se
+envía una propuesta. Tras la aceptación se debe enviar un link oficial de Wompi. No se
+deben solicitar números de tarjeta, CVV ni credenciales bancarias en la landing.
+
 ## Publicación
 1. **App (Streamlit Community Cloud)**: sube el repositorio a GitHub, crea la app en share.streamlit.io con `app_valorix.py` y publícala como accesible para los clientes. `packages.txt` instala Tesseract. En *Secrets* define `DATABASE_URL` (PostgreSQL), `VALORIX_URL_APP`, `SMTP_*` y, si aplica, `ANTHROPIC_API_KEY` y `VALORIX_CODIGO_INVITACION`.
    Define también `VALORIX_ENTORNO=produccion`. En ese modo se exige `DATABASE_URL`, una `VALORIX_URL_APP` HTTPS, SMTP para recuperación y se bloquea el correo por consola.
