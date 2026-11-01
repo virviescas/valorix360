@@ -13,7 +13,7 @@ from valorix_db import VIGENCIA_TOKEN_MIN, ErrorCuenta
 from valorix_motor import ADIC_SPEC, calcular, fmt_valor
 
 AGENTES = ("contable", "financiero", "cumplimiento")
-LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(encoding="utf-8").strip().replace('width="190" height="190"', "width='30' height='30'", 1)
+LOGO_SVG = Path(__file__).with_name("assets").joinpath("logo.svg").read_text(encoding="utf-8").strip().replace('width="256" height="256"', "width='30' height='30'", 1)
 CONSENTIMIENTO = ("Autorizo a Valorix360 el tratamiento de mis datos personales y de la información financiera que cargue, "
                   "para prestar el servicio, conforme a la Ley 1581 de 2012. Puedo eliminar mi cuenta y mis datos cuando quiera.")
 
